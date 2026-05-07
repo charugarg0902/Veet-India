@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Veet India – Sentiment Analysis Dashboard 2025–26</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+  :root {
+    --navy:    #0F1B35;
+    --navy2:   #1A2D52;
+    --pos:     #22A699;
+    --pos-lt:  #D0F0EB;
+    --neu:     #F5A623;
+    --neu-lt:  #FEF0D5;
+    --neg:     #D64045;
+    --neg-lt:  #FAE0E1;
+    --ph1:     #7C5CBF;
+    --ph2:     #2575FC;
+    --ph3:     #0AB68B;
+    --bg:      #F1F3F8;
+    --card:    #FFFFFF;
+    --txt:     #0F1B35;
+    --txt2:    #506080;
+    --border:  #E0E6EF;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--txt); }
+
+  /* ── TOP HEADER ───────────────────────────── */
+  .top-bar {
+    background: var(--navy);
+    padding: 0 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    border-bottom: 3px solid var(--ph1);
+  }
+  .top-bar .logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.5px;
+  }
+  .top-bar .logo span { color: var(--pos); }
+  .top-bar .meta {
+    font-size: 12px;
+    color: rgba(255,255,255,0.55);
+    text-align: right;
+    line-height: 1.5;
+  }
+  .top-bar .meta strong { color: rgba(255,255,255,0.9); font-weight: 500; }
+
+  /* ── PHASE BANNER ───────────────────────── */
+  .phase-banner {
+    background: var(--navy2);
+    padding: 10px 40px;
+    display: flex;
+    gap: 0;
+    align-items: stretch;
+    overflow: hidden;
+  }
+  .phase-seg {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 20px;
+    position: relative;
+    flex: 1;
+    border-right: 1px solid rgba(255,255,255,0.1);
+  }
+  .phase-seg:last-child { border-right: none; }
+  .phase-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .phase-seg .label {
+    font-size: 11px;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.3;
+  }
+  .phase-seg .label strong { display: block; font-size: 12px; color: #fff; font-weight: 600; }
+
+  /* ── LAYOUT ─────────────────────────────── */
+  .dashboard { padding: 28px 40px; }
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--txt2);
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .row { display: flex; gap: 16px; margin-bottom: 20px; align-items: stretch; }
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 20px 22px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── KPI CARDS ─────────────────────────── */
+  .kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; margin-bottom: 20px; }
+  .kpi-card {
+    background: var(--card);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 16px 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .kpi-card.pos::before { background: var(--pos); }
+  .kpi-card.neu::before { background: var(--neu); }
+  .kpi-card.neg::before { background: var(--neg); }
+  .kpi-card.net::before { background: var(--navy); }
+  .kpi-card.tot::before { background: var(--ph2); }
+  .kpi-card.scr::before { background: var(--ph1); }
+  .kpi-label { font-size: 11px; color: var(--txt2); font-weight: 500; margin-bottom: 6px; }
+  .kpi-val { font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; line-height: 1; }
+  .kpi-val.pos { color: var(--pos); }
+  .kpi-val.neu { color: var(--neu); }
+  .kpi-val.neg { color: var(--neg); }
+  .kpi-val.net { color: var(--navy); }
+  .kpi-val.tot { color: var(--ph2); }
+  .kpi-val.scr { color: var(--ph1); }
+  .kpi-sub { font-size: 11px; color: var(--txt2); margin-top: 6px; }
+
+  /* ── CHART CARDS ─────────────────────────── */
+  .chart-card { flex: 1; }
+  .card-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--txt);
+    margin-bottom: 4px;
+  }
+  .card-sub { font-size: 11px; color: var(--txt2); margin-bottom: 16px; }
+
+  /* ── LEGEND ─────────────────────────────── */
+  .legend {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--txt2);
+  }
+  .legend-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* ── HORIZONTAL STACKED ─────────────────── */
+  .stacked-bar-wrap { margin-bottom: 10px; }
+  .stacked-row { margin-bottom: 8px; }
+  .stacked-label { font-size: 11px; color: var(--txt2); margin-bottom: 3px; display: flex; justify-content: space-between; }
+  .stacked-bar { display: flex; height: 20px; border-radius: 4px; overflow: hidden; }
+  .sb-seg { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; font-weight: 600; }
+
+  /* ── KEYWORD CHIPS ──────────────────────── */
+  .kw-section { margin-bottom: 10px; }
+  .kw-title { font-size: 11px; font-weight: 600; margin-bottom: 8px; }
+  .kw-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .chip.pos { background: var(--pos-lt); color: #0B6B62; }
+  .chip.neg { background: var(--neg-lt); color: #8B1E21; }
+
+  /* ── PLATFORM TABLE ─────────────────────── */
+  .plat-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .plat-table th {
+    text-align: left; padding: 6px 10px;
+    background: #F6F8FC;
+    font-weight: 600; font-size: 11px;
+    color: var(--txt2);
+    border-bottom: 1px solid var(--border);
+  }
+  .plat-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .plat-table tr:last-child td { border-bottom: none; }
+  .mini-bar-wrap { height: 8px; background: #EEF1F7; border-radius: 4px; width: 80px; display: inline-block; vertical-align: middle; }
+  .mini-bar { height: 100%; border-radius: 4px; }
+
+  /* ── PHASE INDICATOR BARS ───────────────── */
+  .phase-bar-section { margin-top: 6px; }
+  .phase-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 11px; }
+  .phase-bar-label { width: 130px; color: var(--txt2); flex-shrink: 0; }
+  .phase-bar-outer { flex: 1; height: 14px; background: #EEF1F7; border-radius: 4px; overflow: hidden; }
+  .phase-bar-inner { height: 100%; border-radius: 4px; }
+  .phase-bar-pct { width: 36px; text-align: right; font-weight: 600; font-size: 11px; }
+
+  /* ── FOOTER ─────────────────────────────── */
+  .footer {
+    background: var(--navy);
+    padding: 14px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+  }
+  .footer p { font-size: 11px; color: rgba(255,255,255,0.4); }
+
+  /* ── SCORE GAUGE ─────────────────────────── */
+  .gauge-wrap { display: flex; align-items: center; gap: 16px; }
+  .gauge-score {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--pos);
+    line-height: 1;
+  }
+  .gauge-label { font-size: 12px; color: var(--txt2); margin-top: 4px; }
+
+  /* ── TREND BADGE ─────────────────────────── */
+  .trend { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .trend.up { background: var(--pos-lt); color: #0B6B62; }
+  .trend.dn { background: var(--neg-lt); color: #8B1E21; }
+  .trend.fl { background: var(--neu-lt); color: #7A5000; }
+</style>
+</head>
+<body>
+
+<!-- TOP HEADER -->
+<div class="top-bar">
+  <div class="logo">Veet<span>.</span>India — Sentiment Intelligence Report</div>
+  <div class="meta">
+    <strong>Period: May 2025 – April 2026  ·  n = 1,000 Reviews</strong><br>
+    Platforms: Amazon IN · Nykaa · Flipkart · YouTube · Instagram · Reddit IN · Twitter/X · Facebook · MouthShut<br>
+    Prepared for: Senior Leadership Review  ·  Category: Depilatory / Hair Removal
+  </div>
+</div>
+
+<!-- CAMPAIGN PHASE BANNER -->
+<div class="phase-banner">
+  <div class="phase-seg">
+    <div class="phase-dot" style="background:#7C5CBF;"></div>
+    <div class="label">
+      <strong>Phase 1 — May to Nov 2025</strong>
+      "Smoothest Way to Sexy" Bikini Ad · TV + Digital · 7 months
+    </div>
+  </div>
+  <div class="phase-seg">
+    <div class="phase-dot" style="background:#2575FC;"></div>
+    <div class="label">
+      <strong>Phase 2 — Dec 2025 to Jan 2026</strong>
+      Myth Busting & Other Ads · Digital Only · 2 months
+    </div>
+  </div>
+  <div class="phase-seg">
+    <div class="phase-dot" style="background:#0AB68B;"></div>
+    <div class="label">
+      <strong>Phase 3 — Feb to Apr 2026</strong>
+      Myth Busting & Other Ads · TV + Digital · 3 months
+    </div>
+  </div>
+  <div class="phase-seg" style="flex:0.5; min-width:120px;">
+    <div class="phase-dot" style="background:#F5A623;"></div>
+    <div class="label">
+      <strong>Base: n = 1,000</strong>
+      Weighted Platform Base
+    </div>
+  </div>
+</div>
+
+<div class="dashboard">
+
+  <!-- SECTION: KPI ROW -->
+  <div class="section-label">Overall Brand Sentiment KPIs · May 2025 – Apr 2026</div>
+  <div class="kpi-grid">
+    <div class="kpi-card tot">
+      <div class="kpi-label">Total Reviews</div>
+      <div class="kpi-val tot">1,000</div>
+      <div class="kpi-sub">Weighted base, 9 platforms</div>
+    </div>
+    <div class="kpi-card pos">
+      <div class="kpi-label">Positive Reviews</div>
+      <div class="kpi-val pos">583</div>
+      <div class="kpi-sub">58.3% share</div>
+    </div>
+    <div class="kpi-card neu">
+      <div class="kpi-label">Neutral Reviews</div>
+      <div class="kpi-val neu">243</div>
+      <div class="kpi-sub">24.3% share</div>
+    </div>
+    <div class="kpi-card neg">
+      <div class="kpi-label">Negative Reviews</div>
+      <div class="kpi-val neg">174</div>
+      <div class="kpi-sub">17.4% share</div>
+    </div>
+    <div class="kpi-card net">
+      <div class="kpi-label">Net Sentiment Score</div>
+      <div class="kpi-val net">+40.9%</div>
+      <div class="kpi-sub">(Pos − Neg) / Total</div>
+    </div>
+    <div class="kpi-card scr">
+      <div class="kpi-label">Wtd Sentiment Index</div>
+      <div class="kpi-val scr">+0.41</div>
+      <div class="kpi-sub">Range: −1.0 to +1.0</div>
+    </div>
+  </div>
+
+  <!-- ROW: Monthly Trend + Quarterly KPIs -->
+  <div class="section-label">Sentiment Trend — Monthly & Quarterly Breakdown</div>
+  <div class="row">
+    <div class="card chart-card" style="flex:2;">
+      <div class="card-title">Monthly Sentiment Trend (May 2025 – Apr 2026)</div>
+      <div class="card-sub">Stacked area chart — % of Positive, Neutral, Negative per month | Phase bands shown</div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-swatch" style="background:#22A699;"></span>Positive %</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:#F5A623;"></span>Neutral %</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:#D64045;"></span>Negative %</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:#7C5CBF; border-radius:1px;"></span>Phase 1</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:#2575FC; border-radius:1px;"></span>Phase 2</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:#0AB68B; border-radius:1px;"></span>Phase 3</span>
+      </div>
+      <div style="position:relative;width:100%;height:230px;">
+        <canvas id="trendChart" role="img" aria-label="Monthly sentiment trend chart showing positive, neutral and negative percentages from May 2025 to April 2026">Monthly sentiment data from May 2025 to April 2026.</canvas>
+      </div>
+    </div>
+
+    <div class="card" style="width:270px; flex-shrink:0;">
+      <div class="card-title">Quarterly KPI Summary</div>
+      <div class="card-sub">Absolute % with weighted base</div>
+
+      <!-- Q2 2025 -->
+      <div style="margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--border);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <span style="font-size:12px; font-weight:600; color:#7C5CBF;">Q2 2025</span>
+          <span class="trend up">Net +38.6%</span>
+        </div>
+        <div style="font-size:10px; color:var(--txt2); margin-bottom:4px;">Bikini Ad Launch · TV+Digital</div>
+        <div class="stacked-bar">
+          <div class="sb-seg" style="background:#22A699; width:57.5%;">57.5%</div>
+          <div class="sb-seg" style="background:#F5A623; width:24.7%;">24.7%</div>
+          <div class="sb-seg" style="background:#D64045; width:17.8%;">17.8%</div>
+        </div>
+      </div>
+      <!-- Q3 2025 -->
+      <div style="margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--border);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <span style="font-size:12px; font-weight:600; color:#7C5CBF;">Q3 2025</span>
+          <span class="trend up">Net +39.4%</span>
+        </div>
+        <div style="font-size:10px; color:var(--txt2); margin-bottom:4px;">Bikini Ad Peak · TV+Digital</div>
+        <div class="stacked-bar">
+          <div class="sb-seg" style="background:#22A699; width:58.4%;">58.4%</div>
+          <div class="sb-seg" style="background:#F5A623; width:23.4%;">23.4%</div>
+          <div class="sb-seg" style="background:#D64045; width:18.2%;">18.2%</div>
+        </div>
+      </div>
+      <!-- Q4 2025 -->
+      <div style="margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--border);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <span style="font-size:12px; font-weight:600; color:#2575FC;">Q4 2025</span>
+          <span class="trend fl">Net +37.1%</span>
+        </div>
+        <div style="font-size:10px; color:var(--txt2); margin-bottom:4px;">Bikini → Myth Busting & Other Ads transition</div>
+        <div class="stacked-bar">
+          <div class="sb-seg" style="background:#22A699; width:57.1%;">57.1%</div>
+          <div class="sb-seg" style="background:#F5A623; width:23.0%;">23.0%</div>
+          <div class="sb-seg" style="background:#D64045; width:19.9%;">19.9%</div>
+        </div>
+      </div>
+      <!-- Q1 2026 -->
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <span style="font-size:12px; font-weight:600; color:#0AB68B;">Q1 2026</span>
+          <span class="trend up">Net +45.4%</span>
+        </div>
+        <div style="font-size:10px; color:var(--txt2); margin-bottom:4px;">Myth Busting & Other Ads · TV+Digital · Best quarter</div>
+        <div class="stacked-bar">
+          <div class="sb-seg" style="background:#22A699; width:61.7%;">61.7%</div>
+          <div class="sb-seg" style="background:#F5A623; width:22.1%;">22.1%</div>
+          <div class="sb-seg" style="background:#D64045; width:16.2%;">16.2%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW: Phase comparison + Net Sentiment Line -->
+  <div class="row">
+    <div class="card chart-card" style="flex:1;">
+      <div class="card-title">Net Sentiment % by Phase</div>
+      <div class="card-sub">Campaign effectiveness vs sentiment shift</div>
+      <div style="position:relative;width:100%;height:200px;">
+        <canvas id="phaseChart" role="img" aria-label="Bar chart comparing net sentiment percentage across three campaign phases">Phase 1: 38.7%, Phase 2: 37.1%, Phase 3: 45.8%</canvas>
+      </div>
+    </div>
+
+    <div class="card chart-card" style="flex:1;">
+      <div class="card-title">Sentiment by Platform (n-weighted)</div>
+      <div class="card-sub">Positive % across all digital & e-comm channels</div>
+      <div style="position:relative;width:100%;height:200px;">
+        <canvas id="platformChart" role="img" aria-label="Horizontal bar chart showing positive percentage by platform">Platform breakdown of positive reviews.</canvas>
+      </div>
+    </div>
+
+    <div class="card" style="width:240px; flex-shrink:0;">
+      <div class="card-title">Phase Sentiment Shift</div>
+      <div class="card-sub">How sentiment changed across campaigns</div>
+      <div class="phase-bar-section" style="margin-top:12px;">
+        <div style="font-size:11px; font-weight:600; color:#7C5CBF; margin-bottom:8px;">Phase 1 — Bikini Ad (TV+Digital)</div>
+        <div class="phase-bar-row">
+          <div class="phase-bar-label">Positive</div>
+          <div class="phase-bar-outer"><div class="phase-bar-inner" style="width:57.9%;background:#22A699;"></div></div>
+          <div class="phase-bar-pct" style="color:#22A699;">57.9%</div>
+        </div>
+        <div class="phase-bar-row">
+          <div class="phase-bar-label">Neutral</div>
+          <div class="phase-bar-outer"><div class="phase-bar-inner" style="width:23.7%;background:#F5A623;"></div></div>
+          <div class="phase-bar-pct" style="color:#F5A623;">23.7%</div>
+        </div>
+        <div class="phase-bar-row">
+          <div class="phase-bar-label">Negative</div>
+          <div class="phase-bar-outer"><div class="phase-bar-inner" style="width:18.4%;background:#D64045;"></div></div>
+          <div class="phase-bar-pct" style="color:#D64045;">18.4%</div>
+        </div>
+
+        <div style="font-size:11px; font-weight:600; color:#2575FC; margin:12px 0 8px;">Phase 2 — Myth Busting & Other Ads (Digital Only)</div>
+        <div class="phase-bar-row">
+          <div class="phase-bar-label">Positive</div>
+          <div class="phase-bar-outer"><div class="phase-bar-inner" style="width:55.2%;background:#22A699;"></div></div>
+          <div class="phase-bar-pct" style="color:#22A699;">55.2%</div>
+        </div>
+        <div class="phase-bar-row">
+          <div class="phase-bar-label">Neutral</div>
+          <div class="phase-bar-outer"><div class="phase-bar-inner" style="width:27.7%;background:#F5A623;"></div></div>
+          <div class="phase-bar-pct" style="color:#F5A623;">27.7%</div>
+        </div>
+        <div class="phase-bar-row">
+          <div class="phase-bar-label">Negative</div>
+          <div class="phase-bar-outer"><div class="phase-bar-inner" style="width:17.1%;background:#D64045;"></div></div>
+          <div class="phase-bar-pct" style="color:#D64045;">17.1%</div>
+        </div>
+
+        <div style="font-size:11px; font-weight:600; color:#0AB68B; margin:12px 0 8px;">Phase 3 — Myth Busting & Other Ads (TV+Digital)</div>
+        <div class="phase-bar-row">
+          <div class="phase-bar-label">Positive</div>
+          <div class="phase-bar-outer"><div class="phase-bar-inner" style="width:62.3%;background:#22A699;"></div></div>
+          <div class="phase-bar-pct" style="color:#22A699;">62.3%</div>
+        </div>
+        <div class="phase-bar-row">
+          <div class="phase-bar-label">Neutral</div>
+          <div class="phase-bar-outer"><div class="phase-bar-inner" style="width:21.6%;background:#F5A623;"></div></div>
+          <div class="phase-bar-pct" style="color:#F5A623;">21.6%</div>
+        </div>
+        <div class="phase-bar-row">
+          <div class="phase-bar-label">Negative</div>
+          <div class="phase-bar-outer"><div class="phase-bar-inner" style="width:16.1%;background:#D64045;"></div></div>
+          <div class="phase-bar-pct" style="color:#D64045;">16.1%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW: Keywords + Platform table -->
+  <div class="section-label">Keyword Intelligence & Platform Deep Dive</div>
+  <div class="row">
+    <div class="card" style="flex:1;">
+      <div class="card-title">Top Positive Keywords</div>
+      <div class="card-sub">Dominant themes driving positive sentiment</div>
+      <div class="kw-chips" style="margin-top:10px;">
+        <span class="chip pos">smooth skin</span>
+        <span class="chip pos">painless</span>
+        <span class="chip pos">no irritation</span>
+        <span class="chip pos">easy to use</span>
+        <span class="chip pos">great fragrance</span>
+        <span class="chip pos">bikini safe</span>
+        <span class="chip pos">empowering ad</span>
+        <span class="chip pos">5-minute removal</span>
+        <span class="chip pos">soft skin</span>
+        <span class="chip pos">derma tested</span>
+        <span class="chip pos">body positivity</span>
+        <span class="chip pos">no burning</span>
+        <span class="chip pos">salon replacement</span>
+      </div>
+      <div style="margin-top:16px;">
+        <div class="card-title">Top Negative Keywords</div>
+        <div class="card-sub">Themes driving complaint volume</div>
+        <div class="kw-chips" style="margin-top:10px;">
+          <span class="chip neg">burning sensation</span>
+          <span class="chip neg">skin irritation</span>
+          <span class="chip neg">bad smell</span>
+          <span class="chip neg">packaging issue</span>
+          <span class="chip neg">rash</span>
+          <span class="chip neg">not effective</span>
+          <span class="chip neg">too bold (ad)</span>
+          <span class="chip neg">expensive</span>
+          <span class="chip neg">counterfeit</span>
+          <span class="chip neg">hyperpigmentation</span>
+          <span class="chip neg">incomplete removal</span>
+          <span class="chip neg">short-lived results</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="flex:1.6;">
+      <div class="card-title">Platform Sentiment Breakdown</div>
+      <div class="card-sub">n-weighted · Positive%, Neutral%, Negative% per channel</div>
+      <table class="plat-table" style="margin-top:10px;">
+        <thead>
+          <tr>
+            <th>Platform</th>
+            <th>Reviews (n)</th>
+            <th>Positive %</th>
+            <th>Neutral %</th>
+            <th>Negative %</th>
+            <th>Net Sent.</th>
+            <th>Avg Rating</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Amazon IN</strong></td>
+            <td>280</td>
+            <td><span style="color:#22A699; font-weight:600;">57.8%</span>
+              <span class="mini-bar-wrap"><span class="mini-bar" style="width:57.8%;background:#22A699;"></span></span></td>
+            <td>24.0%</td>
+            <td style="color:#D64045;">18.2%</td>
+            <td><strong style="color:#22A699;">+39.6%</strong></td>
+            <td>3.9</td>
+          </tr>
+          <tr style="background:#F9FAFC;">
+            <td><strong>Nykaa</strong></td>
+            <td>180</td>
+            <td><span style="color:#22A699; font-weight:600;">63.2%</span>
+              <span class="mini-bar-wrap"><span class="mini-bar" style="width:63.2%;background:#22A699;"></span></span></td>
+            <td>21.1%</td>
+            <td style="color:#D64045;">15.7%</td>
+            <td><strong style="color:#22A699;">+47.5%</strong></td>
+            <td>4.2</td>
+          </tr>
+          <tr>
+            <td><strong>Flipkart</strong></td>
+            <td>140</td>
+            <td><span style="color:#22A699; font-weight:600;">56.1%</span>
+              <span class="mini-bar-wrap"><span class="mini-bar" style="width:56.1%;background:#22A699;"></span></span></td>
+            <td>24.8%</td>
+            <td style="color:#D64045;">19.1%</td>
+            <td><strong style="color:#22A699;">+37.0%</strong></td>
+            <td>3.8</td>
+          </tr>
+          <tr style="background:#F9FAFC;">
+            <td><strong>YouTube</strong></td>
+            <td>120</td>
+            <td><span style="color:#22A699; font-weight:600;">58.4%</span>
+              <span class="mini-bar-wrap"><span class="mini-bar" style="width:58.4%;background:#22A699;"></span></span></td>
+            <td>25.0%</td>
+            <td style="color:#D64045;">16.6%</td>
+            <td><strong style="color:#22A699;">+41.8%</strong></td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td><strong>Instagram</strong></td>
+            <td>100</td>
+            <td><span style="color:#22A699; font-weight:600;">61.0%</span>
+              <span class="mini-bar-wrap"><span class="mini-bar" style="width:61%;background:#22A699;"></span></span></td>
+            <td>22.0%</td>
+            <td style="color:#D64045;">17.0%</td>
+            <td><strong style="color:#22A699;">+44.0%</strong></td>
+            <td>—</td>
+          </tr>
+          <tr style="background:#F9FAFC;">
+            <td><strong>Reddit IN</strong></td>
+            <td>80</td>
+            <td><span style="color:#F5A623; font-weight:600;">47.5%</span>
+              <span class="mini-bar-wrap"><span class="mini-bar" style="width:47.5%;background:#F5A623;"></span></span></td>
+            <td>30.0%</td>
+            <td style="color:#D64045;">22.5%</td>
+            <td><strong style="color:#F5A623;">+25.0%</strong></td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td><strong>Twitter/X</strong></td>
+            <td>60</td>
+            <td><span style="color:#F5A623; font-weight:600;">51.7%</span>
+              <span class="mini-bar-wrap"><span class="mini-bar" style="width:51.7%;background:#F5A623;"></span></span></td>
+            <td>28.3%</td>
+            <td style="color:#D64045;">20.0%</td>
+            <td><strong style="color:#F5A623;">+31.7%</strong></td>
+            <td>—</td>
+          </tr>
+          <tr style="background:#F9FAFC;">
+            <td><strong>Facebook</strong></td>
+            <td>30</td>
+            <td><span style="color:#22A699; font-weight:600;">60.0%</span>
+              <span class="mini-bar-wrap"><span class="mini-bar" style="width:60%;background:#22A699;"></span></span></td>
+            <td>23.3%</td>
+            <td style="color:#D64045;">16.7%</td>
+            <td><strong style="color:#22A699;">+43.3%</strong></td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td><strong>MouthShut</strong></td>
+            <td>10</td>
+            <td><span style="color:#22A699; font-weight:600;">60.0%</span>
+              <span class="mini-bar-wrap"><span class="mini-bar" style="width:60%;background:#22A699;"></span></span></td>
+            <td>20.0%</td>
+            <td style="color:#D64045;">20.0%</td>
+            <td><strong style="color:#22A699;">+40.0%</strong></td>
+            <td>—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ROW: Donut + Key Insights -->
+  <div class="section-label">Overall Sentiment Composition & Strategic Highlights</div>
+  <div class="row">
+    <div class="card" style="width:260px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+      <div class="card-title" style="text-align:center; width:100%;">Overall Sentiment Split</div>
+      <div class="card-sub" style="text-align:center; width:100%;">n = 1,000 · Weighted base</div>
+      <div style="position:relative; width:180px; height:180px; margin:10px auto;">
+        <canvas id="donutChart" role="img" aria-label="Donut chart showing 58.3% positive, 24.3% neutral, 17.4% negative">Positive 58.3%, Neutral 24.3%, Negative 17.4%</canvas>
+      </div>
+      <div class="legend" style="justify-content:center; margin-top:8px;">
+        <span class="legend-item"><span class="legend-swatch" style="background:#22A699;"></span>Positive 58.3%</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:#F5A623;"></span>Neutral 24.3%</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:#D64045;"></span>Negative 17.4%</span>
+      </div>
+    </div>
+
+    <div class="card" style="flex:1;">
+      <div class="card-title">Key Findings — Positive Drivers</div>
+      <div class="card-sub">What's working well for Veet India</div>
+      <div style="margin-top:12px; display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <div style="width:32px; height:32px; border-radius:8px; background:var(--pos-lt); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0;">✓</div>
+          <div><div style="font-size:12px; font-weight:600; margin-bottom:2px;">Efficacy on Sensitive Skin</div><div style="font-size:11px; color:var(--txt2);">"No irritation", "works on sensitive skin" are top positive themes, validating Veet Pure Sensitive positioning.</div></div>
+        </div>
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <div style="width:32px; height:32px; border-radius:8px; background:var(--pos-lt); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0;">✓</div>
+          <div><div style="font-size:12px; font-weight:600; margin-bottom:2px;">Bikini Ad Normalisation</div><div style="font-size:11px; color:var(--txt2);">Phase 1 created strong brand recall. "Empowering ad" and "body positivity" drove organic UGC lift on Instagram and YouTube.</div></div>
+        </div>
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <div style="width:32px; height:32px; border-radius:8px; background:var(--pos-lt); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0;">✓</div>
+          <div><div style="font-size:12px; font-weight:600; margin-bottom:2px;">Myth-Busting Digital Expansion (Phase 3)</div><div style="font-size:11px; color:var(--txt2);">Best quarter: Q1 2026 hit 62.3% positive and net +45.4% — digital amplification of myth-busting content shifted sentiment upward.</div></div>
+        </div>
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <div style="width:32px; height:32px; border-radius:8px; background:var(--pos-lt); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0;">✓</div>
+          <div><div style="font-size:12px; font-weight:600; margin-bottom:2px;">Nykaa as Strongest Sentiment Channel</div><div style="font-size:11px; color:var(--txt2);">Nykaa leads with 63.2% positive and lowest negative (15.7%) — beauty-focused audience aligns well with product messaging.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="flex:1;">
+      <div class="card-title">Key Findings — Negative Drivers</div>
+      <div class="card-sub">Areas requiring attention</div>
+      <div style="margin-top:12px; display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <div style="width:32px; height:32px; border-radius:8px; background:var(--neg-lt); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0;">!</div>
+          <div><div style="font-size:12px; font-weight:600; margin-bottom:2px;">Skin Reactions on Bikini Area</div><div style="font-size:11px; color:var(--txt2);">"Burning sensation" and "rash" appear in 22% of negative reviews — concentrated on intimate/sensitive area application, despite product claim.</div></div>
+        </div>
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <div style="width:32px; height:32px; border-radius:8px; background:var(--neg-lt); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0;">!</div>
+          <div><div style="font-size:12px; font-weight:600; margin-bottom:2px;">Packaging / Seal Quality</div><div style="font-size:11px; color:var(--txt2);">Broken seals, underfilled tubes, and counterfeit listings on Flipkart/Amazon third-party sellers drive ~18% of negative reviews.</div></div>
+        </div>
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <div style="width:32px; height:32px; border-radius:8px; background:var(--neg-lt); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0;">!</div>
+          <div><div style="font-size:12px; font-weight:600; margin-bottom:2px;">Ad Tone Polarisation</div><div style="font-size:11px; color:var(--txt2);">~8% of negative comments relate to the Bikini ad being "too bold for India" — concentrated on Twitter/X and Reddit (conservative segments).</div></div>
+        </div>
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <div style="width:32px; height:32px; border-radius:8px; background:var(--neg-lt); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0;">!</div>
+          <div><div style="font-size:12px; font-weight:600; margin-bottom:2px;">Reddit IN — Lowest Platform Score</div><div style="font-size:11px; color:var(--txt2);">Reddit India records only 47.5% positive — younger, more skeptical audience questions product efficacy vs. marketing claims.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <p>Veet India Sentiment Intelligence Report · May 2025 – April 2026 · n = 1,000 · Reckitt Benckiser India · Prepared for Senior Leadership Review</p>
+  <p>Methodology: Weighted Platform Base · Net Sentiment = (Pos−Neg)/Total · Sentiment Index Range: −1.0 to +1.0 · Platforms: Amazon IN, Nykaa, Flipkart, YouTube, Instagram, Reddit IN, Twitter/X, Facebook, MouthShut</p>
+</div>
+
+<script>
+const months = ['May-25','Jun-25','Jul-25','Aug-25','Sep-25','Oct-25','Nov-25','Dec-25','Jan-26','Feb-26','Mar-26','Apr-26'];
+const posData = [58.6,57.1,58.2,58.8,57.9,58.0,56.8,56.4,55.0,61.2,62.8,63.1];
+const neuData = [24.3,25.0,23.3,23.0,24.6,24.0,23.5,26.0,29.0,22.5,20.5,21.5];
+const negData = [17.1,17.9,18.5,18.2,17.5,18.0,19.7,17.6,16.0,16.3,16.7,15.4];
+
+const ph1 = 'rgba(124,92,191,0.08)';
+const ph2 = 'rgba(37,117,252,0.08)';
+const ph3 = 'rgba(10,182,139,0.08)';
+
+new Chart(document.getElementById('trendChart'), {
+  type: 'bar',
+  data: {
+    labels: months,
+    datasets: [
+      { label: 'Positive %', data: posData, backgroundColor: '#22A699', stack: 'sent' },
+      { label: 'Neutral %',  data: neuData,  backgroundColor: '#F5A623', stack: 'sent' },
+      { label: 'Negative %', data: negData,  backgroundColor: '#D64045', stack: 'sent' },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false },
+      annotation: {},
+      tooltip: {
+        callbacks: {
+          label: ctx => ` ${ctx.dataset.label}: ${ctx.raw.toFixed(1)}%`
+        }
+      }
+    },
+    scales: {
+      x: { stacked: true, ticks: { font: { size: 10 }, autoSkip: false }, grid: { display: false } },
+      y: { stacked: true, max: 100, ticks: { callback: v => v+'%', font: { size: 10 } }, grid: { color: '#EEF1F7' } }
+    }
+  }
+});
+
+new Chart(document.getElementById('phaseChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Phase 1\nBikini Ad\nTV+Digital', 'Phase 2\nMyth Busting\n& Other Ads\nDigital Only', 'Phase 3\nMyth Busting\n& Other Ads\nTV+Digital'],
+    datasets: [{
+      label: 'Net Sentiment %',
+      data: [38.7, 37.1, 45.8],
+      backgroundColor: ['#7C5CBF', '#2575FC', '#0AB68B'],
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` Net Sentiment: +${ctx.raw.toFixed(1)}%` } }
+    },
+    scales: {
+      x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+      y: { min: 30, max: 55, ticks: { callback: v => '+'+v+'%', font: { size: 10 } }, grid: { color: '#EEF1F7' } }
+    }
+  }
+});
+
+const platLabels = ['Nykaa','Instagram','Facebook','Amazon IN','YouTube','Twitter/X','Flipkart','Reddit IN'];
+const platPos    = [63.2, 61.0, 60.0, 57.8, 58.4, 51.7, 56.1, 47.5];
+new Chart(document.getElementById('platformChart'), {
+  type: 'bar',
+  data: {
+    labels: platLabels,
+    datasets: [{
+      label: 'Positive %',
+      data: platPos,
+      backgroundColor: platPos.map(v => v >= 60 ? '#22A699' : v >= 55 ? '#F5A623' : '#D64045'),
+      borderRadius: 4,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` Positive: ${ctx.raw.toFixed(1)}%` } }
+    },
+    scales: {
+      x: { min: 40, max: 70, ticks: { callback: v => v+'%', font: { size: 10 } }, grid: { color: '#EEF1F7' } },
+      y: { ticks: { font: { size: 10 } }, grid: { display: false } }
+    }
+  }
+});
+
+new Chart(document.getElementById('donutChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Positive', 'Neutral', 'Negative'],
+    datasets: [{
+      data: [58.3, 24.3, 17.4],
+      backgroundColor: ['#22A699', '#F5A623', '#D64045'],
+      borderWidth: 0,
+      hoverOffset: 6
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    cutout: '68%',
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw.toFixed(1)}%` } }
+    }
+  }
+});
+</script>
+</body>
+</html>
